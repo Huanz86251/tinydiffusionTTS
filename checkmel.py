@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 加载npy文件
+
 z_noise = np.load('./stft_test_output/z_noise.npy')
 y_original = np.load('./stft_test_output/y_original.npy')
 y_hat_denoise = np.load('./stft_test_output/y_hat_denoise.npy')
 
-# 可视化mel谱图
+
 plt.figure(figsize=(15, 5))
 plt.subplot(1, 3, 1)
 plt.imshow(z_noise, aspect='auto', origin='lower', vmin=-3, vmax=3)  # 固定到噪声范围
