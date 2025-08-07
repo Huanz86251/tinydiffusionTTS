@@ -15,7 +15,6 @@ with open(FILELIST_PATH, "r", encoding="utf-8") as f:
 for idx, line in enumerate(tqdm(lines, desc="Checking filelist")):
     parts = line.strip().split("|", 2)
 
-    # ✅ 检查是否是三段结构
     if len(parts) != 3:
         bad_format_lines.append(idx + 1)
         continue
@@ -23,16 +22,16 @@ for idx, line in enumerate(tqdm(lines, desc="Checking filelist")):
     speaker_id, wav_path, text = parts
     txt_path = wav_path.replace(".wav", ".normalized.txt")
 
-    # ✅ 检查 .wav 文件是否存在
+ 
     if not os.path.exists(wav_path):
         missing_wav_lines.append(idx + 1)
 
-    # ✅ 检查 .normalized.txt 文件是否存在
+ 
     if not os.path.exists(txt_path):
         missing_txt_lines.append(idx + 1)
         continue
 
-    # ✅ 检查文本内容
+
     with open(txt_path, "r", encoding="utf-8") as f_txt:
         txt_content = f_txt.read().strip()
         if txt_content == "":
@@ -40,12 +39,12 @@ for idx, line in enumerate(tqdm(lines, desc="Checking filelist")):
         elif txt_content != text.strip():
             mismatch_lines.append(idx + 1)
 
-# ✅ 输出统计结果
+
 print("\n=== Filelist Validation Report ===")
 print(f"Total lines checked: {len(lines)}")
-print(f"❌ Bad format lines: {len(bad_format_lines)}")
-print(f"❌ Missing .wav files: {len(missing_wav_lines)}")
-print(f"❌ Missing .normalized.txt files: {len(missing_txt_lines)}")
-print(f"❌ Empty text in .normalized.txt: {len(empty_text_lines)}")
-print(f"❌ Mismatch between filelist text and .normalized.txt: {len(mismatch_lines)}")
+print(f" Bad format lines: {len(bad_format_lines)}")
+print(f" Missing .wav files: {len(missing_wav_lines)}")
+print(f" Missing .normalized.txt files: {len(missing_txt_lines)}")
+print(f" Empty text in .normalized.txt: {len(empty_text_lines)}")
+print(f" Mismatch between filelist text and .normalized.txt: {len(mismatch_lines)}")
 print("===================================")
