@@ -26,10 +26,10 @@ import os
 def save_plot(mel_tensor, filepath):
     mel_np = mel_tensor.numpy()  # 转numpy
 
-    # 打印stats（normalized范围）
+
     print(f"[Save Plot] Stats: min={mel_np.min():.2f}, max={mel_np.max():.2f}, mean={mel_np.mean():.2f}")
 
-    # 用imshow（直接用你的代码思路）
+
     plt.figure(figsize=(10, 4))
     plt.imshow(mel_np, aspect='auto', origin='lower', cmap='plasma', vmin=-3, vmax=3)  # 针对normalized Mel
     plt.colorbar(format='%+2.0f')
@@ -48,7 +48,7 @@ def estimate_mel_mean_std(dataset):
 
     for i in range(len(dataset)):
         mel = dataset[i]['y']  # shape: [80, T]
-        mel = mel.flatten()    # 展平成 1D
+        mel = mel.flatten()    
         total_frames += mel.numel()
         mean_sum += mel.sum().item()
         sq_sum += (mel ** 2).sum().item()
@@ -253,7 +253,7 @@ def train():
             wav = torch.tanh(wav)
             wav = wav.squeeze(0).cpu()
             ta.save(os.path.join(SAMPLE_DIR, f'epoch_{epoch + 1}_gen.wav'), wav, SAMPLE_RATE)
-            gt_text = sample_batch[0]['text']  # 假设你的 sample_test_batch 返回了 'text' 字段
+            gt_text = sample_batch[0]['text'] 
             with open(os.path.join(SAMPLE_DIR, f'epoch_{epoch + 1}_gen.txt'), 'w', encoding='utf-8') as f:
                 f.write(gt_text.strip() + '\n')
         # Save checkpoint
