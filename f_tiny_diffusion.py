@@ -27,7 +27,7 @@ def dprint(*args, **kwargs):
 
 def _resample_to_16k(wav, orig_sr=22050):
     if wav.shape[0] > 1:
-        wav = wav.mean(dim=0, keepdim=True)  # 强制转 mono
+        wav = wav.mean(dim=0, keepdim=True)  
     if DEBUG:
         dprint(f"[_resample_to_16k] Before resample: shape={wav.shape}, sr={orig_sr}")
     resampled_wav = ta.functional.resample(wav, orig_sr, 16000)
@@ -190,7 +190,7 @@ class MLPConditioner(nn.Module):
             nn.Linear(d_speaker, d_hidden),
             nn.ReLU(),
             nn.Linear(d_hidden, d_speakerout),
-            nn.Tanh()  # 替换 LeakyReLU，确保输出 [-1,1]
+            nn.Tanh()  
         )
         # Multi-layer Transformer blocks for phoneme processing
         self.layers = nn.ModuleList()
@@ -321,7 +321,7 @@ class TinyDiffusion(nn.Module):
         alpha_bar = torch.cos((t / n_timesteps + s) / (1 + s) * math.pi / 2) ** 2  # alpha_bar_t = cos^2(...)
         alphas = alpha_bar[1:] / alpha_bar[:-1]  # alpha_t = alpha_bar_t / alpha_bar_{t-1}
         betas = torch.clamp(1. - alphas, min=0.0001, max=0.999)  # betas = 1 - alpha_t，clip避免极端值
-        print(f"[Init] 使用cosine调度, betas.min()={betas.min().item():.6f}, betas.max()={betas.max().item():.6f}")
+        print(f"[Init], betas.min()={betas.min().item():.6f}, betas.max()={betas.max().item():.6f}")
 
         alphas_cumprod = torch.cumprod(alphas, dim=0)
         alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.)
@@ -367,9 +367,9 @@ class TinyDiffusion(nn.Module):
 
         #self.wav2vec = Wav2Vec2Model.from_pretrained(
 #     "facebook/wav2vec2-base-960h",
-#     cache_dir="./wav2vec2_local",  # 就是你现在这个目录
+#     cache_dir="./wav2vec2_local", 
 #     local_files_only=True
-# ).eval().cuda()   # eval 模式，避免梯度
+# ).eval().cuda()   
 
 
         self.mel_mean, self.mel_std = -8.122798642, 2.1809869538
@@ -477,30 +477,29 @@ class TinyDiffusion(nn.Module):
     #             f"[Perceptual] y_hat_denorm device: {y_hat_denorm.device}, dtype: {y_hat_denorm.dtype}, min/max: {y_hat_denorm.min():.2f}/{y_hat_denorm.max():.2f}")
     #
     #     with autocast():
-    #         pred_wave = self.vocoder(y_hat_denorm.to(device)) # torchaudio HiFi-GAN 接口，直接输入 Mel [B, 80, T]
+    #         pred_wave = self.vocoder(y_hat_denorm.to(device)) 
     #         if DEBUG:
     #             dprint(
     #                 f"[Perceptual] pred_wave device: {pred_wave.device}, dtype: {pred_wave.dtype}, shape: {pred_wave.shape}")
     #
-    #     # 处理长度不匹配
+ 
     #     min_len = min(pred_wave.shape[-1], gt_wave.shape[-1])
     #     pred_wave = pred_wave[..., :min_len]
     #     gt_wave = gt_wave[..., :min_len]
     #
-    #     # resample 到 Wav2Vec2 输入（16000Hz）
+ 
     #     pred_wave_res = _resample_to_16k(pred_wave.squeeze(1))  # [B, time]
     #     gt_wave_res = _resample_to_16k(gt_wave.squeeze(1))
-    #
-    #     # 提取 Wav2Vec2 特征
+
     #     with torch.no_grad():
     #         pred_feats = self.wav2vec(pred_wave_res, output_hidden_states=True).hidden_states[9]
     #         gt_feats = self.wav2vec(gt_wave_res, output_hidden_states=True).hidden_states[9]
     #
-    #     # 应用 mask
+   
     #     feat_len = pred_feats.shape[1]
     #     mask_time = mask.squeeze(1)[:, :feat_len].unsqueeze(-1).expand(-1, -1, pred_feats.shape[-1]).float()
     #
-    #     # 计算 L2 损失
+    
     #     perceptual_loss = F.mse_loss(pred_feats * mask_time, gt_feats * mask_time)
     #
     #     return perceptual_loss
@@ -512,14 +511,14 @@ class TinyDiffusion(nn.Module):
         Args:
             y_hat (torch.Tensor): Predicted mel spectrogram [B, n_feats, Ty]
             y (torch.Tensor): Ground truth mel spectrogram [B, n_feats, Ty]
-            gt_wave (torch.Tensor): Ground truth waveform [B, (1,) T_wave]  # 支持 2D 或 3D
+            gt_wave (torch.Tensor): Ground truth waveform [B, (1,) T_wave]  
             mask (torch.Tensor): Mask for valid frames [B, 1, Ty]
 
         Returns:
             torch.Tensor: Scalar STFT loss
         """
         device = y_hat.device
-        B = y_hat.shape[0]  # 批次大小
+        B = y_hat.shape[0]  
         if DEBUG:
             dprint(
                 f"[STFT Loss input] y_hat.shape: {y_hat.shape}, min/max: {y_hat.min():.2f}/{y_hat.max():.2f}, "
@@ -556,7 +555,7 @@ class TinyDiffusion(nn.Module):
                 dprint(f"[STFT Loss pred_wave warning] channel dim {pred_wave.shape[1]} != 1")
 
         # Align waveform lengths
-        # 统一 gt_wave 到 [B, 1, T_wave]
+     
         if gt_wave.dim() == 2:
             gt_wave = gt_wave.unsqueeze(1)  # [B, T] -> [B, 1, T]
         if DEBUG:
@@ -571,7 +570,7 @@ class TinyDiffusion(nn.Module):
             dprint(
                 f"[STFT Loss aligned] min_len: {min_len}, pred_wave.shape: {pred_wave.shape}, dim: {pred_wave.dim()}, "
                 f"gt_wave.shape: {gt_wave.shape}, dim: {gt_wave.dim()}")
-            expected_len = mask.sum(dim=2).max().item() * 256  # 假设 hop_length=256
+            expected_len = mask.sum(dim=2).max().item() * 256  
             if min_len < expected_len * 0.8:
                 dprint(f"[STFT Loss aligned warning] min_len {min_len} < 80% of expected {expected_len}")
             if pred_wave.shape[0] != B:
@@ -620,7 +619,7 @@ class TinyDiffusion(nn.Module):
             if pred_wave.shape != torch.Size([B, 1, min_len]):
                 dprint(f"[STFT Loss post-offset warning] pred_wave shape {pred_wave.shape} != expected [B, 1, min_len]")
 
-        # 修改部分：保存 pred_wave 和 gt_wave，只保存一次
+      
         if not hasattr(self, '_saved_wav'):
             self._saved_wav = True
             os.makedirs('./stft_test_output', exist_ok=True)
@@ -629,16 +628,16 @@ class TinyDiffusion(nn.Module):
             pred = pred_wave[0].detach().cpu()  # shape: [1, T]
             gt = gt_wave[0].detach().cpu()  # shape: [1, T]
 
-            # 若张量维度为 2（[1, T]），就可以直接保存；若为 [T]，需 unsqueeze
+      
             if pred.dim() == 1:
                 pred = pred.unsqueeze(0)  # [T] → [1, T]
             if gt.dim() == 1:
                 gt = gt.unsqueeze(0)
 
-            # 保证是 [channels, time]
+
             assert pred.dim() == 2 and gt.dim() == 2, f"pred.dim={pred.dim()}, gt.dim={gt.dim()}"
 
-            # 保存音频
+
             ta.save('./stft_test_output/pred.wav', pred, 22050)
             ta.save('./stft_test_output/gt.wav', gt, 22050)
         # Multi-resolution STFT parameters
@@ -660,7 +659,7 @@ class TinyDiffusion(nn.Module):
                 normalized=True
             ).to(device)
 
-            # 统一处理 waveform 到 [B, T_wave] 格式
+   
             if pred_wave.dim() == 3:
                 pred_wave_flat = pred_wave.squeeze(1)  # [B, 1, T] -> [B, T]
             else:
@@ -693,7 +692,7 @@ class TinyDiffusion(nn.Module):
                     dprint(
                         f"[STFT Loss scale {i} warning] gt_wave_flat dim {gt_wave_flat.dim()} != 2, shape: {gt_wave_flat.shape}")
 
-            # 断言 waveform 是 2D [B, T]
+    
             assert pred_wave_flat.dim() == 2, f"[STFT Loss scale {i}] pred_wave_flat dim {pred_wave_flat.dim()} != 2, shape: {pred_wave_flat.shape}"
             assert gt_wave_flat.dim() == 2, f"[STFT Loss scale {i}] gt_wave_flat dim {gt_wave_flat.dim()} != 2, shape: {gt_wave_flat.shape}"
             assert pred_wave_flat.shape[
@@ -746,7 +745,7 @@ class TinyDiffusion(nn.Module):
                     dprint(
                         f"[STFT Loss scale {i} warning] mask_spec freq {mask_spec.shape[1]} != n_fft/2+1 {n_fft // 2 + 1}")
 
-            # 断言 mask_spec 形状匹配 pred_spec
+   
             assert mask_spec.shape == pred_spec.shape, f"[STFT Loss scale {i}] mask_spec {mask_spec.shape} does not match pred_spec {pred_spec.shape}"
 
             total_frames += mask_spec.sum()
@@ -804,12 +803,12 @@ class TinyDiffusion(nn.Module):
         logw = cond['logw']                # [B, T_phon]
         dur = cond['dur']                  # [B, T_phon]
 
-        # --- (1) 得到 Ty 和 y_max_length ---
+ 
         Ty = y_lengths                     # tensor [B]
         if y_max_length is None:
             y_max_length = int(Ty.max().item())
 
-        # --- (2) 展开 mu_phon 到 mu_x ---
+
 
         expanded_mu = []
         for b in range(B):
@@ -852,16 +851,15 @@ class TinyDiffusion(nn.Module):
             expanded_mu.append(mu_b)
         mu_x = torch.stack(expanded_mu)  # [B, 80, y_max_length]
 
-        # --- (3) 归一化 mu_x ---
-        # --- (3) 无归一化（y已标准化到N(0,1)） ---
+
         mask = sequence_mask(Ty, y_max_length).unsqueeze(1).float()  # [B,1,T]
         mu_x = mu_x.masked_fill(~mask.bool(), 0.0)  # 只填充 pad=0，防泄露
         if DEBUG:
             dprint(
                 f"[compute_loss mu_x no norm] shape: {mu_x.shape}, min/max: {mu_x.min()}/{mu_x.max()}, mean/std: {mu_x.mean()}/{mu_x.std()}")
-        mu_x = torch.clamp(mu_x, min=-10.0, max=10.0)  # 可选：clip防溢出（N(0,1)安全范围），若稳定可删
+        mu_x = torch.clamp(mu_x, min=-10.0, max=10.0)  
 
-        # --- (4) 更新 cond & 扩散 ---
+
         cond['mu_x'] = mu_x
         cond['mask'] = mask
         if DEBUG:
@@ -896,16 +894,16 @@ class TinyDiffusion(nn.Module):
         diff_raw = F.mse_loss(epsilon_pred, noise, reduction='none')
         if not hasattr(self, '_saved_mel'):
             self._saved_mel = True
-            z_sample = z[0].detach().cpu().numpy()  # 加噪mel
-            y_sample = y[0].detach().cpu().numpy()  # 原始mel
-            y_hat_sample = y_hat[0].detach().cpu().numpy()  # denoise后的mel
+            z_sample = z[0].detach().cpu().numpy() 
+            y_sample = y[0].detach().cpu().numpy()  
+            y_hat_sample = y_hat[0].detach().cpu().numpy()  
 
-            # 保存为 .npy 文件
+         
             np.save('./stft_test_output/z_noise.npy', z_sample)
             np.save('./stft_test_output/y_original.npy', y_sample)
             np.save('./stft_test_output/y_hat_denoise.npy', y_hat_sample)
 
-            # 打印统计信息
+      
             print(
                 f"[MEL Stats] z_noise: min={z_sample.min():.4f}, max={z_sample.max():.4f}, mean={z_sample.mean():.4f}, std={z_sample.std():.4f}")
             print(
@@ -930,7 +928,7 @@ class TinyDiffusion(nn.Module):
             if DEBUG:
                 dprint(
                     f"[dur_loss pred_dur] shape: {pred_dur.shape}, min/max: {pred_dur.min()}/{pred_dur.max()}, sum: {pred_dur.sum(1)}")
-            # L_len: 绝对帧差，归一化
+ 
             pred_len = pred_dur.sum(1)
             L_len = ((pred_len - y_lengths.float()).abs() / y_lengths.float().mean().clamp(min=1.)).mean()
             if DEBUG:
@@ -951,7 +949,7 @@ class TinyDiffusion(nn.Module):
                 L_dur_gt = (L_dur_gt_raw * x_mask).sum() / x_mask.sum().clamp_min(1.)
                 if DEBUG:
                     dprint(f"[dur_loss L_dur_gt] value: {L_dur_gt}")
-            # 条件化权重
+
             if gt_dur is not None:
                 dur_loss = 0.0 * L_len + 0.0 * L_tv + 1.0 * L_dur_gt
             else:
@@ -968,7 +966,7 @@ class TinyDiffusion(nn.Module):
                 diff = F.mse_loss(y_hat, y)
                 dprint(f"[compute_loss y_hat vs y MSE] {diff.item():.4f}")
         else:
-            perceptual_l = torch.tensor(0.0, device=y.device)  # 如果无 gt_wave，跳过
+            perceptual_l = torch.tensor(0.0, device=y.device) 
         if DEBUG:
             print(
                 f"Dur sum: {dur.sum(1)}, y_lengths: {y_lengths}, diff%: {((dur.sum(1) - y_lengths).abs() / y_lengths).mean().item():.4f}")
@@ -980,14 +978,14 @@ class TinyDiffusion(nn.Module):
             mask_exp = mask.expand_as(x).float()
             num_valid = mask_exp.sum(dim=dim).clamp(min=1.0)
 
-            # 用 clipped mean 代替 median，提升鲁棒性但保持稠密梯度
+
             clipped_x = torch.clamp(x, min=-5.0, max=5.0)  # clip outliers
             mean = (clipped_x * mask_exp).sum(dim=dim) / num_valid
 
             sq_diff = ((x - mean.view(-1, 1, 1)) ** 2 * mask_exp)
-            sq_diff = torch.clamp(sq_diff, 0.0, 5.0)  # 如原版，防爆炸
+            sq_diff = torch.clamp(sq_diff, 0.0, 5.0)  
             var = sq_diff.sum(dim=dim) / num_valid
-            return var.mean() # scalar，平均过batch
+            return var.mean() 
         var_y = masked_var(y, mask, dim=[1, 2])
         if DEBUG:
             dprint(
@@ -1001,7 +999,7 @@ class TinyDiffusion(nn.Module):
             var_y_hat_no_mask = y_hat.var(dim=[1, 2]).mean()
             dprint(f"[Var Log No Mask] var_y: {var_y_no_mask.item():.4f}, var_y_hat: {var_y_hat_no_mask.item():.4f}")
         var_y_hat = masked_var(y_hat, mask, dim=[1, 2])
-        var_loss = (var_y_hat - var_y).abs().mean()  # L1防敏感
+        var_loss = (var_y_hat - var_y).abs().mean()  
         # if DEBUG:
         #     dprint(
         #         f"[Var Log Masked] var_y: {var_y.item():.4f}, var_y_hat: {var_y_hat.item():.4f}, var_loss: {var_loss.item():.4f}")
@@ -1020,7 +1018,7 @@ class TinyDiffusion(nn.Module):
         if n_timesteps is None:
             n_timesteps = self.n_timesteps
 
-        # 1) 先拿到 logw / mu_phon
+
         cond = self.get_cond(phoneme_ids, spk, x_lengths, y_max_length=None)
         logw = cond['logw']  # [B, T_phon]
         mu_phon = cond['mu_phon']  # [B, 80, T_phon]
@@ -1034,7 +1032,7 @@ class TinyDiffusion(nn.Module):
         if DEBUG:
             dprint(f"[sample raw_dur] shape: {raw_dur.shape}, sum: {raw_dur.sum(1)}")
 
-        # 3) 估计 mel 总长度
+      
         if y_max_length is None:
             y_lengths_pred = raw_dur.sum(1).round().int().clamp(min=1)
             y_max_length = int(y_lengths_pred.max().item())
@@ -1043,7 +1041,7 @@ class TinyDiffusion(nn.Module):
         if DEBUG:
             dprint(f"[sample y_lengths_pred] values: {y_lengths_pred}, y_max_length: {y_max_length}")
 
-        # 4) 直接round，无需scale
+
         dur_int = raw_dur.round().long().clamp(min=1, max=50)
         for b in range(B):
             Tb = x_lengths[b].item()
@@ -1064,7 +1062,7 @@ class TinyDiffusion(nn.Module):
             if DEBUG:
                 dprint(f"[sample dur_int b={b}] sum: {dur_int[b].sum()} vs target: {target_ty}")
 
-        # 5) 展开 mu_phon -> mu_x
+
         expanded_mu = []
         for b in range(B):
             Ty = y_lengths_pred[b].item()
@@ -1077,16 +1075,15 @@ class TinyDiffusion(nn.Module):
             expanded_mu.append(mu_b)
         mu_x = torch.stack(expanded_mu, dim=0)
 
-        # 6) 归一化
-        # 7) 无归一化（y已标准化到N(0,1)）
+
         mask = sequence_mask(y_lengths_pred, y_max_length).unsqueeze(1).float().to(device)
-        mu_x = mu_x.masked_fill(~mask.bool(), 0.0)  # 只填充 pad=0
+        mu_x = mu_x.masked_fill(~mask.bool(), 0.0)  
         if DEBUG:
             dprint(
                 f"[sample mu_x no norm] shape: {mu_x.shape}, min/max: {mu_x.min()}/{mu_x.max()}, mean/std: {mu_x.mean()}/{mu_x.std()}")
-        #mu_x = torch.clamp(mu_x, min=-10.0, max=10.0)  # 可选 clip
+        #mu_x = torch.clamp(mu_x, min=-10.0, max=10.0)  
 
-        # 7) Diffusion 采样
+
         cond['mu_x'] = mu_x
         cond['mask'] = mask
         z = mu_x + torch.randn(B, self.n_feats, y_max_length, device=device)
@@ -1104,6 +1101,6 @@ class TinyDiffusion(nn.Module):
             z = torch.clamp(z, -5.0, 5.0)
             z += temperature * sigma_t * torch.randn_like(z)
         mel_mean, mel_std = -8.122798642, 2.1809869538
-        z = z * mel_std + mel_mean  # 必须保留，匹配HiFi-GAN输入
+        z = z * mel_std + mel_mean 
         z = torch.clamp(z, min=-40.0, max=2.0)
         return z
