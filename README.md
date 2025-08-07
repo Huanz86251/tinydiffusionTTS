@@ -58,7 +58,7 @@ This repository contains the source code for the course project submission of a 
 
 ## 🧪 Example Usage
 
-The `goodsample/` folder contains:
+The `goodsample/` folder contains 2 generated wav with ground truth wav
 
 ---
 
