@@ -71,7 +71,7 @@ class PhonemeMelSpeakerDataset(Dataset):
                 continue
             speaker_emb = self.speaker_embs[speaker_id]
             if os.path.exists(mel_path):
-                # 加载缓存的 Mel 频谱图
+
                 mel = torch.load(mel_path)
                 wav, sr = ta.load(wav_path)
                 if sr != self.sample_rate:
@@ -92,20 +92,20 @@ class PhonemeMelSpeakerDataset(Dataset):
             diff = dur_sum - y_lengths
 
             if abs(diff) > 2 * threshold:
-                idx = (idx + 1) % len(self.filelist)  # 尝试下一个样本
+                idx = (idx + 1) % len(self.filelist) 
                 self.escape_counter += 1
                 continue
             elif abs(diff) > 0.5*threshold:
                 nonzero_idx = (durations > 0).nonzero(as_tuple=True)[0]
                 if len(nonzero_idx) == 0:
-                    idx = (idx + 1) % len(self.filelist)  # 尝试下一个样本
+                    idx = (idx + 1) % len(self.filelist) 
                     self.escape_counter += 1
                     continue
 
-                # 按 duration 值从大到小排序
+              
                 sorted_idx = nonzero_idx[torch.argsort(durations[nonzero_idx], descending=True)]
 
-                n_fix = min(abs(int(diff)), len(sorted_idx))  # 修复次数不超过有效 token 数
+                n_fix = min(abs(int(diff)), len(sorted_idx))  
                 for i in sorted_idx[:n_fix]:
                     if diff > 0:
                         durations[i] -= 1
@@ -148,7 +148,7 @@ class PhonemeMelSpeakerBatchCollate:
         spk = torch.stack([item['spk'] for item in batch])
         x_lengths = torch.tensor([item['x_lengths'] for item in batch])
         y_lengths = torch.tensor([item['y_lengths'] for item in batch])
-        hop_length = 256  # 从 Dataset 拿
+        hop_length = 256  
         max_audio = max(item['y_lengths'] for item in batch) * hop_length + hop_length
         gt_wave = torch.stack([F.pad(item['gt_wave'], (0, max_audio - item['gt_wave'].shape[0]), value=0.0) for item in
                                batch])  # [B, max_audio]
