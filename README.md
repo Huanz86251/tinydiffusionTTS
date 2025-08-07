@@ -51,7 +51,7 @@ This repository contains the source code for the course project submission of a 
 
 - `demo.py`  
   → **Demo script showing model prediction:**
-  - input wav to extract speaker embedding
+  - input wav to extract speaker embedding `103_1241_000000_000001.wav`
   - input text "This is a test."
   - generate output wav, in here `demo_output.wav`
 ---
