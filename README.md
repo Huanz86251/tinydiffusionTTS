@@ -43,6 +43,11 @@ This repository contains the source code for the course project submission of a 
   - `data/LibriTTS-R/full_libritts_aligned_filelist.txt`  
   - `data/LibriTTS-R/phone2idx.json`
 
+- `demo.py`  
+  → Demo script showing model prediction:
+  - input wav to extract speaker embedding
+  - input text "This is a test."
+  - generate output wav, in here `demo_output.wav`
 ---
 
 ## 🧪 Example Usage
